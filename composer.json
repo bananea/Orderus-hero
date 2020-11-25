@@ -1,0 +1,17 @@
+{
+    "name": "adi/Emagia",
+    "authors": [
+        {
+            "name": "Nanea Adrian",
+            "email": "nanea_adrian@yahoo.com"
+        }
+    ],
+    "autoload": {
+      "psr-4": {
+        "Emagia\\":"src/Emagia"
+      }
+    },
+    "require": {
+        "phpunit/phpunit": "^7.5"
+    }
+}
