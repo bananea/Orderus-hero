@@ -81,7 +81,7 @@ class Fight
         $this->iPlayerAttackThisRound = self::FIRST_HERO_ATTACKS_FIRST;
     }
 
-    protected function fightOneRound(EHero $oAttacker, EHero $oDefender)
+    public function fightOneRound(EHero $oAttacker, EHero $oDefender)
     {
         $iDamage = $this->calculateDamage($oAttacker, $oDefender);
         echo 'Attacker does ' . $iDamage . ' damage ' . PHP_EOL;
