@@ -53,6 +53,13 @@ class Fight
             $this->switchPlayerAttack();
             $this->iRounds++;
         }
+        if ($this->iRounds <= self::MAXIM_ROUNDS) {
+            if ($this->oHeroFirst->isAlive() ) {
+                echo 'Winner is :'. $this->oHeroFirst->getSName() .PHP_EOL;
+            } else {
+                echo 'Winner is :'. $this->oHeroSecond->getSName() .PHP_EOL;
+            }
+        }
     }
 
 
