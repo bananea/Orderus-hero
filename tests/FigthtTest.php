@@ -1,4 +1,5 @@
 <?php
+
 use PHPUnit\Framework\TestCase;
 use Emagia\Hero\Hero as EHero;
 use Emagia\Hero\Orderus as EOrderus;
@@ -10,21 +11,28 @@ final class FightTest extends TestCase
     private $oHero1;
     private $oHero2;
 
-    protected function setUp() {
-       // $this->oHero1 = new EOrderus();
+    protected function setUp()
+    {
+        // $this->oHero1 = new EOrderus();
         $this->oHero1 = $this->getMockBuilder(EOrderus::class)
             ->disableOriginalConstructor()
             ->setMethods(['isLuckyThisTurn'])
             ->getMock();
-       // $this->oHero2 = new EWildBeast();
+        // $this->oHero2 = new EWildBeast();
         $this->oHero2 = $this->getMockBuilder(EWildBeast::class)
             ->disableOriginalConstructor()
             ->setMethods(['isLuckyThisTurn'])
             ->getMock();
         $this->initHeroesWithValues();
+        $this->oHero1->resetHSpecialSkills();
+        $this->oHero2->resetHSpecialSkills();
+        $this->setOutputCallback(function () {
+        });
     }
 
-    protected function initHeroesWithValues () {
+
+    protected function initHeroesWithValues()
+    {
         $this->oHero1->setIHealth(75);
         $this->oHero1->setIStrength(73);
         $this->oHero1->setIDefence(52);
@@ -74,6 +82,30 @@ final class FightTest extends TestCase
 
         $mockFight->fightOneRound($this->oHero1, $this->oHero2);
         $this->assertEquals(74, $this->oHero2->getIHealth());
+    }
+
+    public function testFightNormalOneRoundWithRapidStrike(): void
+    {
+        $this->oHero1->setISpeed(44);
+        $this->oHero1->activateHSpecialSkills('RapidStrike');
+        /* $mockFight = $this->getMockBuilder(EFight::class)
+             ->disableOriginalConstructor()
+             ->getMock();*/
+
+        $this->oHero2->expects($this->any())
+            ->method('isLuckyThisTurn')
+            ->will($this->returnValue(false));
+        $mockFight = new EFight($this->oHero1, $this->oHero2);
+        $mockFight->fightOneRound($this->oHero1, $this->oHero2);
+        $this->assertEquals(26, $this->oHero2->getIHealth());
+    }
+
+    public function testFightNormalOneRoundWithMagicShield(): void
+    {
+        $this->oHero1->activateHSpecialSkills('MagicShield');
+        $mockFight = new EFight($this->oHero2, $this->oHero1);
+        $mockFight->fightOneRound($this->oHero2, $this->oHero1);
+        $this->assertEquals(66, $this->oHero1->getIHealth());
     }
 
 }
