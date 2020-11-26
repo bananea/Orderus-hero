@@ -16,19 +16,8 @@ class Orderus extends Hero
         'MIN_LUCK' => 10,
         'MAX_LUCK' => 30,
     ];
-    protected $hActiveSkills = [
-        "RapidStrike" => [
-            'name' => 'RapidStrike',
-            'active_on' => 'attack',
-            'how_often_in_100_procent' => 20,
-            'how_much_atacks_more_in_100_procent' => 200
-        ],
-        "MagicShield" => [
-            'name' => 'MagicShield',
-            'active_on' => 'defense',
-            'how_often_in_100_procent' => 20,
-            'how_much_blocks_in_100_procent' => 50
-        ]
+    protected $hSpecialSkills = [
+        'RapidStrike' ,'MagicShield'
     ];
 
     public function __construct()

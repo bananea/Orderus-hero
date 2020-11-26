@@ -3,18 +3,20 @@
 namespace Emagia\Fight;
 
 use Emagia\Hero\Hero as EHero;
+use Emagia\Hero\SpecialSkills as ESpecialSkills;
 
 class Fight
 {
     const MAXIM_ROUNDS = 20;
     const FIRST_ROUND = 1;
+    const FIRST_HERO_ATTACKS_FIRST = 1;
+    const SECOND_HERO_ATTACKS_FIRST = 2;
     private $oHeroFirst;
     private $oHeroSecond;
-    private $iRounds = 1;
+    private $iRounds = self::FIRST_ROUND;
     private $sAttackerName;
     private $sDefenderName;
-    private $iPlayerAttackThisRound = 1;
-    private $hActiveSkillsThisRound = [];
+    private $iPlayerAttackThisRound = self::FIRST_HERO_ATTACKS_FIRST;
 
     public function __construct(EHero $oHeroFirst, EHero $oHeroSecond)
     {
@@ -24,29 +26,42 @@ class Fight
 
     public function fightHeroes()
     {
-        echo 'Fight starts between ' . $this->oHeroFirst->getSName() . ' health ' . $this->oHeroFirst->getIHealth() . ' strenght '   . $this->oHeroFirst->getIStrength() . ' defence ' .$this->oHeroFirst->getIDefence().
-            ' and  ' . $this->oHeroSecond->getSName() .' health ' . $this->oHeroSecond->getIHealth() . ' strenght '   . $this->oHeroSecond->getIStrength() . ' defence ' .$this->oHeroSecond->getIDefence() . PHP_EOL;
+        echo 'Fight starts between :'.PHP_EOL . $this->oHeroFirst->getSName() . ' health ' . $this->oHeroFirst->getIHealth() . ' strenght '
+            . $this->oHeroFirst->getIStrength() . ' defence ' . $this->oHeroFirst->getIDefence() . ' speed '. $this->oHeroFirst->getISpeed() .
+            ' and  '. PHP_EOL . $this->oHeroSecond->getSName() . ' health ' . $this->oHeroSecond->getIHealth() . ' strenght ' . $this->oHeroSecond->getIStrength() .
+            ' defence ' . $this->oHeroSecond->getIDefence() . ' speed '. $this->oHeroSecond->getISpeed()  . PHP_EOL;
         if ($this->iRounds == self::FIRST_ROUND) {
             if ($this->oHeroFirst->getISpeed() < $this->oHeroSecond->getISpeed()) {
-                $this->iPlayerAttackThisRound = 2;
+                $this->iPlayerAttackThisRound = self::SECOND_HERO_ATTACKS_FIRST;
             }
         }
         while ($this->oHeroFirst->isAlive() && $this->oHeroSecond->isAlive() && $this->iRounds <= self::MAXIM_ROUNDS) {
-
             $this->setAttackerAndDefenderNames();
             $this->logRoundStarts();
-            $this->fightOneRound();
+
+            if ($this->iPlayerAttackThisRound == self::FIRST_HERO_ATTACKS_FIRST) {
+                $this->oHeroFirst->initHeroSpecialSkillsByType('attack');
+                $this->oHeroSecond->initHeroSpecialSkillsByType('defence');
+                $this->fightOneRound($this->oHeroFirst, $this->oHeroSecond);
+            } else {
+                $this->oHeroSecond->initHeroSpecialSkillsByType('attack');
+                $this->oHeroFirst->initHeroSpecialSkillsByType('defence');
+                $this->fightOneRound($this->oHeroSecond, $this->oHeroFirst);
+            }
+            $this->oHeroFirst->resetHSpecialSkills();
+            $this->oHeroSecond->resetHSpecialSkills();
             $this->switchPlayerAttack();
-            $this->hActiveSkillsThisRound = [];
             $this->iRounds++;
         }
     }
+
+
 
     protected function setAttackerAndDefenderNames()
     {
         $this->sAttackerName = $this->oHeroFirst->getSName();
         $this->sDefenderName = $this->oHeroSecond->getSName();
-        if ($this->iPlayerAttackThisRound == 2) {
+        if ($this->iPlayerAttackThisRound == self::SECOND_HERO_ATTACKS_FIRST) {
             $this->sAttackerName = $this->oHeroSecond->getSName();
             $this->sDefenderName = $this->oHeroFirst->getSName();
         }
@@ -54,97 +69,74 @@ class Fight
 
     public function logRoundStarts()
     {
-        echo 'Round ' . $this->iRounds . ' starts between Attacker ' . $this->sAttackerName . ' and  Defender ' . $this->sDefenderName . PHP_EOL;
+        echo '--Round ' . $this->iRounds . ' starts between Attacker ' . $this->sAttackerName . ' and  Defender ' . $this->sDefenderName . PHP_EOL;
     }
 
     public function switchPlayerAttack()
     {
-        if ($this->iPlayerAttackThisRound == 1) {
-            $this->iPlayerAttackThisRound = 2;
+        if ($this->iPlayerAttackThisRound == self::FIRST_HERO_ATTACKS_FIRST) {
+            $this->iPlayerAttackThisRound = self::SECOND_HERO_ATTACKS_FIRST;
             return;
         }
-        $this->iPlayerAttackThisRound = 1;
+        $this->iPlayerAttackThisRound = self::FIRST_HERO_ATTACKS_FIRST;
     }
 
-    protected function fightOneRound()
+    protected function fightOneRound(EHero $oAttacker, EHero $oDefender)
     {
-
-        $this->doRoundDamage();
-        echo '------------------------' . PHP_EOL;
-    }
-
-    protected function doRoundDamage()
-    {
-        $iDamage = $this->calculateDamage();
+        $iDamage = $this->calculateDamage($oAttacker, $oDefender);
         echo 'Attacker does ' . $iDamage . ' damage ' . PHP_EOL;
         if ($iDamage > 0) {
-            $this->substractDamage($iDamage);
+            $this->substractDamage($oAttacker, $oDefender,$iDamage);
         }
 
     }
 
-    protected function calculateDamage()
+    protected function calculateDamage(EHero $oAttacker, EHero $oDefender)
     {
         //Damage = Attacker strength – Defender defence
-        if ($this->iPlayerAttackThisRound == 1) {
-            if (!$this->isSpecialSkillActivatedThisRound()) {
-                if ($this->oHeroSecond->isLuckyThisTurn()) {
-                    return 0;
-                }
-                $iDamage = $this->oHeroFirst->getIStrength() - $this->oHeroSecond->getIDefence();
-            } else {
-                $iDamage = $this->calculateSpecialDamage();
+        if (!$this->isSpecialSkillActivatedThisRound($oAttacker) && !$this->isSpecialSkillActivatedThisRound($oDefender)) {
+            if ($oDefender->isLuckyThisTurn()) {
+                echo 'Defender gets lucky this turn!' . PHP_EOL;
+                return 0;
             }
-
-            return $iDamage;
+            $iDamage = $oAttacker->getIStrength() - $oDefender->getIDefence();
+        } else {
+            $iDamage = $this->calculateSpecialDamage($oAttacker, $oDefender);
         }
-        $iDamage = $this->oHeroSecond->getIStrength() - $this->oHeroFirst->getIDefence();
+
         return $iDamage;
     }
 
 
-    protected function substractDamage($iDamage)
+    protected function substractDamage(EHero $oAttacker, EHero $oDefender,$iDamage)
     {
         //Damage = Attacker strength – Defender defence
-        if ($this->iPlayerAttackThisRound == 1) {
-            $iNewHealth = $this->oHeroSecond->getIHealth() - $iDamage;
-             $this->oHeroSecond->setIHealth($iNewHealth);
-            echo  $this->oHeroSecond->getSName() . ' new health is  ' . $iNewHealth . '  ' . PHP_EOL;
+            $iNewHealth = $oDefender->getIHealth() - $iDamage;
+            $oDefender->setIHealth($iNewHealth);
+            echo $oDefender->getSName() . ' new health is  ' . $iNewHealth . '  ' . PHP_EOL;
             return;
-        }
-        $iNewHealth = $this->oHeroFirst->getIHealth() - $iDamage;
-        $this->oHeroFirst->setIHealth($iNewHealth);
-        echo  $this->oHeroFirst->getSName() . ' new health is  ' . $iNewHealth . '  ' . PHP_EOL;
-        return;
+
     }
 
-    protected function isSpecialSkillActivatedThisRound()
+    protected function isSpecialSkillActivatedThisRound(EHero $oHero)
     {
-        foreach ($this->oHeroFirst->getHActiveSkills() as $hSkill) {
-            if (rand(0, 100) >= $hSkill['how_often_in_100_procent']) {
-                array_push($this->hActiveSkillsThisRound, $hSkill['name']);
-            }
-        }
-        return count($this->hActiveSkillsThisRound) > 0;
+        return count($oHero->getHActiveSpecialSkills()) > 0;
     }
 
-    protected function calculateSpecialDamage()
+    protected function calculateSpecialDamage(EHero $oAttacker, EHero $oDefender)
     {
-        $iDamage = ($this->oHeroSecond->getIStrength() - $this->oHeroFirst->getIDefence());
-        if ($this->iPlayerAttackThisRound == 1) {
-            foreach ($this->hActiveSkillsThisRound as $sActiveSkillName) {
-                if (array_key_exists($sActiveSkillName, $this->oHeroFirst->getHActiveSkills()) && $this->oHeroFirst->getHActiveSkills()[$sActiveSkillName]['active_on'] == 'attack') {
-                    echo 'Special attack was is  ' . $sActiveSkillName . '  ' . PHP_EOL;
-                    $iDamage *= $this->oHeroFirst->getHActiveSkills()[$sActiveSkillName]['how_much_atacks_more_in_100_procent'] / 100;
-                }
-            }
-        } else {
-            foreach ($this->hActiveSkillsThisRound as $sActiveSkillName) {
-                if (array_key_exists($sActiveSkillName, $this->oHeroFirst->getHActiveSkills()) && $this->oHeroFirst->getHActiveSkills()[$sActiveSkillName]['active_on'] == 'defense') {
-                    echo 'Special defense was is  ' . $sActiveSkillName . '  ' . PHP_EOL;
-                    $iDamage *= $this->oHeroFirst->getHActiveSkills()[$sActiveSkillName]['how_much_atacks_more_in_100_procent'] / 100;
-                }
-            }
+        $iDamage = $oAttacker->getIStrength() - $oDefender->getIDefence();
+        foreach ($oAttacker->getHActiveSpecialSkills() as $sActiveSkillName) {
+            $oSpecialSkills = new  ESpecialSkills();
+            $hSpecialSkills = $oSpecialSkills->getSkillByName($sActiveSkillName);
+            echo 'Special Skill ocurred: '. $sActiveSkillName. PHP_EOL;
+            $iDamage *=$hSpecialSkills['how_much_multiplies_damage'];
+        }
+        foreach ($oDefender->getHActiveSpecialSkills() as $sActiveSkillName) {
+            $oSpecialSkills = new  ESpecialSkills();
+            $hSpecialSkills = $oSpecialSkills->getSkillByName($sActiveSkillName);
+            echo 'Special Skill ocurred: '. $sActiveSkillName. PHP_EOL;
+            $iDamage *=$hSpecialSkills['how_much_multiplies_damage'];
         }
         return $iDamage;
     }

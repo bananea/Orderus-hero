@@ -1,15 +1,22 @@
 <?php
 
 namespace Emagia\Hero;
+
+use Emagia\Hero\SpecialSkills as ESpecialSkills;
 abstract class  Hero
 {
+    const ACTIVE_SKILL_THIS_ROUND = 1;
+    const NOT_ACTIVE_SKILL_THIS_ROUND = 0;
     protected $iHealth;
     protected $iStrength;
     protected $iDefence;
     protected $iSpeed;
     protected $iLuck;
     protected $sName;
-    protected $hActiveSkills;
+    protected $hSpecialSkills = [];
+
+    protected $hActiveSpecialSkills = [];
+
 
 
 
@@ -64,9 +71,35 @@ abstract class  Hero
     /**
      * @return mixed
      */
-    public function getHActiveSkills()
+    public function getHSpecialSkills()
     {
-        return $this->hActiveSkills;
+        return $this->hSpecialSkills;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHActiveSpecialSkills()
+    {
+        return $this->hActiveSpecialSkills;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function activateHSpecialSkills($sSkill)
+    {
+        if (in_array($sSkill, $this->hSpecialSkills)) {
+            array_push($this->hActiveSpecialSkills, $sSkill);
+        }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function resetHSpecialSkills()
+    {
+        $this->hActiveSpecialSkills = [];
     }
 
     /**
@@ -120,6 +153,17 @@ abstract class  Hero
             return true;
         }
         return false;
+    }
+
+    public function initHeroSpecialSkillsByType($sType) {
+        foreach ($this->getHSpecialSkills() as $sSkill) {
+            $iLuckProcent = rand(0, 100);
+            $oSpecialSkills = new  ESpecialSkills();
+            $hSpecialSkills = $oSpecialSkills->getSkillByNameAndType($sSkill,$sType);
+            if (!empty($hSpecialSkills) && $iLuckProcent >= $hSpecialSkills['how_often_in_100_procent']) {
+                array_push($this->hActiveSpecialSkills,$sSkill);
+            }
+        }
     }
 
 }
